@@ -166,6 +166,15 @@ async function main() {
   const fx = await fetchFx(key);
   console.log(`Kur (${fx.date}): 1 USD = ${fx.rates.USD} TL · 1 EUR = ${fx.rates.EUR} TL`);
 
+  // Uygulamanın kabul ettiği aralıkların aynısı (mobile/src/core/schemas.ts). Dışındaysa YAYINLAMA:
+  // iş akışı başarısız olur, GitHub e-posta gönderir, yayındaki son geçerli veri yerinde kalır.
+  const problems = [];
+  if (!(rate >= -50 && rate <= 200)) problems.push(`TÜFE oranı aralık dışı: ${rate}`);
+  for (const [cur, v] of Object.entries(fx.rates)) if (!(v >= 1 && v <= 10_000)) problems.push(`${cur} kuru aralık dışı: ${v}`);
+  const parity = fx.rates.EUR / fx.rates.USD;
+  if (!(parity > 0.5 && parity < 2)) problems.push(`EUR/USD paritesi tutarsız: ${parity}`);
+  if (problems.length) throw new Error(`Veri mantık denetiminden geçmedi, yayınlanmadı:\n  ${problems.join('\n  ')}`);
+
   const target = resolve(here, args[0] ?? 'remote-data.json');
   const data = JSON.parse(readFileSync(target, 'utf8'));
   const before = JSON.stringify({ t: data.tufe12mAvg, fx: data.fx });
