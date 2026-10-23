@@ -1,9 +1,11 @@
-name: TÜFE verisini güncelle
+name: Veriyi güncelle (TÜFE ve döviz kuru)
 
 on:
-  # TÜİK TÜFE'yi her ayın 3'ünde 10:00'da (TR) açıklar. EVDS'ye yansıması ve hafta sonu kaymaları için
-  # ayın 3-6'sı arasında her gün 12:00'de (TR) dener; veri değişmediyse hiçbir şey yapmaz.
   schedule:
+    # Döviz kuru: TCMB kurları iş günleri 15:30'da (TR) açıklar → her iş günü 16:00'da (TR).
+    - cron: '0 13 * * 1-5'
+    # TÜFE: TÜİK her ayın 3'ünde 10:00'da açıklar; EVDS'ye yansıması ve hafta sonu kaymaları için
+    # ayın 3-6'sı 12:00'de (TR) de dener. Veri değişmediyse hiçbir şey kaydedilmez.
     - cron: '0 9 3-6 * *'
   # GitHub'da Actions sekmesinden elle de çalıştırılabilir.
   workflow_dispatch:
@@ -21,8 +23,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: EVDS'den TÜFE çek ve 12 aylık ortalamayı hesapla
-        run: node update-tufe.mjs remote-data.json
+      - name: EVDS'den TÜFE ve kurları çek
+        run: node update-data.mjs remote-data.json
         env:
           EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
 
@@ -34,5 +36,5 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "TÜFE verisi güncellendi"
+          git commit -am "Veri güncellendi"
           git push

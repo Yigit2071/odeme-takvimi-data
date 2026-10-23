@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * TCMB EVDS'den TÜFE endeksini çekip "12 aylık ortalamalara göre değişim"i (kira artış üst sınırı)
- * hesaplar ve uygulamanın okuduğu remote-data.json dosyasını günceller.
+ * TCMB EVDS'den uygulamanın ihtiyaç duyduğu verileri çekip remote-data.json'u günceller:
+ *   - TÜFE "12 aylık ortalamalara göre değişim" (konut kira artışının yasal üst sınırı)
+ *   - USD ve EUR döviz satış kuru (dövizli abonelikleri TL'ye çevirmek için)
  *
  * Kullanım:
- *   node update-tufe.mjs [hedef.json]          (varsayılan: ./remote-data.json)
- *   node update-tufe.mjs --check 2026-09=31.49 (hesabı bilinen bir değerle doğrular, dosyaya yazmaz)
+ *   node update-data.mjs [hedef.json]          (varsayılan: ./remote-data.json)
+ *   node update-data.mjs --check 2026-09=31.49 (TÜFE hesabını açıklanmış bir değerle doğrular, yazmaz)
  *
  * API anahtarı: EVDS_API_KEY ortam değişkeni ya da bu klasördeki .env dosyası.
  * GitHub Actions'ta repo "secret"ı olarak verilir; koda ya da uygulamaya asla girmez.
@@ -21,7 +22,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 // TÜFE genel endeksi, 2025=100 (veri grubu bie_tukfiy2025). Eski 2003=100 serisi (TP.FG.J0) Ocak 2026'da arşivlendi.
 // Doğrulandı: Eylül 2026 → %31,49, Ağustos 2026 → %31,79 (TÜİK'in açıkladığı değerlerle birebir).
 // Seri kodu yine değişirse yalnızca burayı güncelle ve --check ile doğrula.
-const SERIES = process.env.EVDS_SERIES || 'TP.TUKFIY2025.GENEL';
+const CPI_SERIES = process.env.EVDS_SERIES || 'TP.TUKFIY2025.GENEL';
+
+// TCMB döviz satış kurları (veri grubu bie_dkdovytl), günlük; hafta sonu/tatil günleri boş gelir.
+const FX_SERIES = { USD: 'TP.DK.USD.S.YTL', EUR: 'TP.DK.EUR.S.YTL' };
 
 // Güncel adres evds3; eski evds2 yalnızca yedek olarak denenir.
 const ENDPOINTS = [
@@ -55,36 +59,67 @@ function toMonthKey(raw) {
   return null;
 }
 
-async function fetchIndex(key) {
-  const end = new Date();
-  const start = new Date(end.getFullYear() - 3, end.getMonth(), 1);
-  const query = `series=${SERIES}&startDate=${evdsDate(start)}&endDate=${evdsDate(end)}&type=json&frequency=5`;
-  const errors = [];
+/** "23-10-2026" → "2026-10-23" */
+function toISODate(raw) {
+  const m = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(String(raw).trim());
+  return m ? `${m[3]}-${pad(Number(m[2]))}-${pad(Number(m[1]))}` : null;
+}
 
+/** EVDS seri isteği; adresleri sırayla dener. Boş ya da hatalı yanıtta açıklayıcı hata verir. */
+async function evdsSeries(key, series, start, end, extra = '') {
+  const query = `series=${series}&startDate=${evdsDate(start)}&endDate=${evdsDate(end)}&type=json${extra}`;
+  const errors = [];
   for (const build of ENDPOINTS) {
     const url = build(query);
+    const host = new URL(url).host;
     try {
       const res = await fetch(url, { headers: { key, Accept: 'application/json' } });
       const text = await res.text();
       if (!res.ok) {
-        errors.push(`${new URL(url).host}: HTTP ${res.status} ${text.slice(0, 120)}`);
+        errors.push(`${host}: HTTP ${res.status} ${text.slice(0, 120)}`);
         continue;
       }
-      const json = JSON.parse(text);
-      const field = SERIES.replace(/\./g, '_');
-      const points = (json.items ?? [])
-        .map((row) => ({ month: toMonthKey(row.Tarih), value: Number(row[field]) }))
-        .filter((p) => p.month && Number.isFinite(p.value) && p.value > 0);
-      if (points.length === 0) {
-        errors.push(`${new URL(url).host}: yanıt geldi ama veri yok (${text.slice(0, 120)})`);
+      const items = JSON.parse(text).items ?? [];
+      if (items.length === 0) {
+        errors.push(`${host}: yanıt geldi ama veri yok (${text.slice(0, 120)})`);
         continue;
       }
-      return { points, host: new URL(url).host };
+      return { items, host };
     } catch (e) {
-      errors.push(`${new URL(url).host}: ${e.message}`);
+      errors.push(`${host}: ${e.message}`);
     }
   }
-  throw new Error(`EVDS'den veri alınamadı:\n  ${errors.join('\n  ')}`);
+  throw new Error(`EVDS'den ${series} alınamadı:\n  ${errors.join('\n  ')}`);
+}
+
+async function fetchCpi(key) {
+  const end = new Date();
+  const start = new Date(end.getFullYear() - 3, end.getMonth(), 1);
+  const { items, host } = await evdsSeries(key, CPI_SERIES, start, end, '&frequency=5');
+  const field = CPI_SERIES.replace(/\./g, '_');
+  const points = items
+    .map((row) => ({ month: toMonthKey(row.Tarih), value: Number(row[field]) }))
+    .filter((p) => p.month && Number.isFinite(p.value) && p.value > 0);
+  if (points.length === 0) throw new Error(`${CPI_SERIES}: geçerli veri yok`);
+  return { points, host };
+}
+
+/** En son iş gününün USD ve EUR satış kurları (ikisi de dolu olan son gün). */
+async function fetchFx(key) {
+  const end = new Date();
+  const start = new Date(end.getTime() - 14 * 86_400_000);
+  const series = `${FX_SERIES.USD}-${FX_SERIES.EUR}`;
+  const { items } = await evdsSeries(key, series, start, end);
+  const usdField = FX_SERIES.USD.replace(/\./g, '_');
+  const eurField = FX_SERIES.EUR.replace(/\./g, '_');
+  const days = items
+    .map((row) => ({ date: toISODate(row.Tarih), USD: Number(row[usdField]), EUR: Number(row[eurField]) }))
+    .filter((d) => d.date && d.USD > 0 && d.EUR > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const last = days.at(-1);
+  if (!last) throw new Error('Son 14 günde geçerli döviz kuru yok');
+  const round4 = (n) => Math.round(n * 10_000) / 10_000;
+  return { date: last.date, rates: { USD: round4(last.USD), EUR: round4(last.EUR) } };
 }
 
 /**
@@ -113,9 +148,10 @@ export function twelveMonthAverageChange(points, period) {
 async function main() {
   const args = process.argv.slice(2);
   const check = args.find((a) => a.startsWith('--check'));
-  const { points, host } = await fetchIndex(loadKey());
+  const key = loadKey();
+  const { points, host } = await fetchCpi(key);
   const latest = points.map((p) => p.month).sort().at(-1);
-  console.log(`Kaynak: ${host} · seri ${SERIES} · ${points.length} ay · son dönem ${latest}`);
+  console.log(`Kaynak: ${host} · seri ${CPI_SERIES} · ${points.length} ay · son dönem ${latest}`);
 
   if (check) {
     const [period, expected] = (check.split(' ')[1] ?? args[args.indexOf(check) + 1] ?? '').split('=');
@@ -127,18 +163,21 @@ async function main() {
 
   const rate = twelveMonthAverageChange(points, latest);
   if (rate == null) throw new Error(`${latest} için 24 aylık kesintisiz veri yok; hesap yapılamadı.`);
+  const fx = await fetchFx(key);
+  console.log(`Kur (${fx.date}): 1 USD = ${fx.rates.USD} TL · 1 EUR = ${fx.rates.EUR} TL`);
 
   const target = resolve(here, args[0] ?? 'remote-data.json');
   const data = JSON.parse(readFileSync(target, 'utf8'));
-  const changed = data.tufe12mAvg?.period !== latest || data.tufe12mAvg?.rate !== rate;
-  if (!changed) {
-    console.log(`Değişiklik yok: ${latest} %${rate}`);
+  const before = JSON.stringify({ t: data.tufe12mAvg, fx: data.fx });
+  data.tufe12mAvg = { period: latest, rate };
+  data.fx = fx;
+  if (JSON.stringify({ t: data.tufe12mAvg, fx: data.fx }) === before) {
+    console.log(`Değişiklik yok: TÜFE ${latest} %${rate}, kur ${fx.date}`);
     return;
   }
-  data.tufe12mAvg = { period: latest, rate };
   data.updatedAt = new Date().toISOString().slice(0, 10);
   writeFileSync(target, JSON.stringify(data, null, 2) + '\n');
-  console.log(`Güncellendi: ${latest} → %${rate} (${target})`);
+  console.log(`Güncellendi: TÜFE ${latest} %${rate}, kur ${fx.date} (${target})`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
