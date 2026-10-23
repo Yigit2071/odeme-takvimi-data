@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-05",
+  "tufe12mAvg": {
+    "period": "2026-09",
+    "rate": 31.49
+  },
+  "services": [
+    { "id": "netflix", "name": "Netflix", "price": null },
+    { "id": "spotify", "name": "Spotify Premium", "price": null },
+    { "id": "youtube-premium", "name": "YouTube Premium", "price": null },
+    { "id": "disney-plus", "name": "Disney+", "price": null },
+    { "id": "amazon-prime", "name": "Amazon Prime", "price": null },
+    { "id": "apple-music", "name": "Apple Music", "price": null },
+    { "id": "icloud", "name": "iCloud+", "price": null },
+    { "id": "google-one", "name": "Google One", "price": null },
+    { "id": "exxen", "name": "Exxen", "price": null },
+    { "id": "chatgpt-plus", "name": "ChatGPT Plus", "price": null },
+    { "id": "claude-pro", "name": "Claude Pro", "price": null }
+  ]
+}

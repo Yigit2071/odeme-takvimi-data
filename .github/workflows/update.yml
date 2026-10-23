@@ -1,0 +1,38 @@
+name: TÜFE verisini güncelle
+
+on:
+  # TÜİK TÜFE'yi her ayın 3'ünde 10:00'da (TR) açıklar. EVDS'ye yansıması ve hafta sonu kaymaları için
+  # ayın 3-6'sı arasında her gün 12:00'de (TR) dener; veri değişmediyse hiçbir şey yapmaz.
+  schedule:
+    - cron: '0 9 3-6 * *'
+  # GitHub'da Actions sekmesinden elle de çalıştırılabilir.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: EVDS'den TÜFE çek ve 12 aylık ortalamayı hesapla
+        run: node update-tufe.mjs remote-data.json
+        env:
+          EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
+
+      - name: Değiştiyse kaydet (GitHub Pages kendiliğinden yeniden yayınlar)
+        run: |
+          if git diff --quiet; then
+            echo "Veri değişmedi."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "TÜFE verisi güncellendi"
+          git push
