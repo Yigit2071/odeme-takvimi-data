@@ -1,13 +1,16 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-23",
+  "updatedAt": "2026-10-26",
   "tufe12mAvg": {
     "period": "2026-09",
     "rate": 31.49
   },
   "fx": {
-    "date": "2026-10-23",
-    "rates": { "USD": 49.6281, "EUR": 55.7043 }
+    "date": "2026-10-26",
+    "rates": {
+      "USD": 49.654,
+      "EUR": 55.5997
+    }
   },
   "services": [
     {
@@ -16,9 +19,21 @@
       "currency": "TRY",
       "checkedAt": "2026-10-23",
       "plans": [
-        { "id": "temel", "name": "Temel", "price": 259.99 },
-        { "id": "standart", "name": "Standart", "price": 389.99 },
-        { "id": "ozel", "name": "Özel", "price": 499.99 }
+        {
+          "id": "temel",
+          "name": "Temel",
+          "price": 259.99
+        },
+        {
+          "id": "standart",
+          "name": "Standart",
+          "price": 389.99
+        },
+        {
+          "id": "ozel",
+          "name": "Özel",
+          "price": 499.99
+        }
       ]
     },
     {
@@ -27,10 +42,26 @@
       "currency": "TRY",
       "checkedAt": "2026-10-23",
       "plans": [
-        { "id": "bireysel", "name": "Bireysel", "price": 115 },
-        { "id": "ogrenci", "name": "Öğrenci", "price": 60 },
-        { "id": "duo", "name": "Duo", "price": 159 },
-        { "id": "aile", "name": "Aile", "price": 199 }
+        {
+          "id": "bireysel",
+          "name": "Bireysel",
+          "price": 115
+        },
+        {
+          "id": "ogrenci",
+          "name": "Öğrenci",
+          "price": 60
+        },
+        {
+          "id": "duo",
+          "name": "Duo",
+          "price": 159
+        },
+        {
+          "id": "aile",
+          "name": "Aile",
+          "price": 199
+        }
       ]
     },
     {
@@ -39,10 +70,26 @@
       "currency": "TRY",
       "checkedAt": "2026-10-23",
       "plans": [
-        { "id": "bireysel", "name": "Bireysel", "price": 119.99 },
-        { "id": "aile", "name": "Aile", "price": 239.99 },
-        { "id": "ogrenci", "name": "Öğrenci", "price": 79.99 },
-        { "id": "lite", "name": "Lite", "price": 79.99 }
+        {
+          "id": "bireysel",
+          "name": "Bireysel",
+          "price": 119.99
+        },
+        {
+          "id": "aile",
+          "name": "Aile",
+          "price": 239.99
+        },
+        {
+          "id": "ogrenci",
+          "name": "Öğrenci",
+          "price": 79.99
+        },
+        {
+          "id": "lite",
+          "name": "Lite",
+          "price": 79.99
+        }
       ]
     },
     {
@@ -51,28 +98,78 @@
       "currency": "TRY",
       "checkedAt": "2026-10-23",
       "plans": [
-        { "id": "reklamli", "name": "Reklamlı", "price": 249.9 },
-        { "id": "reklamsiz", "name": "Reklamsız", "price": 449.9 }
+        {
+          "id": "reklamli",
+          "name": "Reklamlı",
+          "price": 249.9
+        },
+        {
+          "id": "reklamsiz",
+          "name": "Reklamsız",
+          "price": 449.9
+        }
       ]
     },
-    { "id": "amazon-prime", "name": "Amazon Prime", "currency": "TRY", "checkedAt": null, "plans": [] },
-    { "id": "apple-music", "name": "Apple Music", "currency": "TRY", "checkedAt": null, "plans": [] },
-    { "id": "icloud", "name": "iCloud+", "currency": "TRY", "checkedAt": null, "plans": [] },
-    { "id": "google-one", "name": "Google One", "currency": "TRY", "checkedAt": null, "plans": [] },
-    { "id": "exxen", "name": "Exxen", "currency": "TRY", "checkedAt": null, "plans": [] },
+    {
+      "id": "amazon-prime",
+      "name": "Amazon Prime",
+      "currency": "TRY",
+      "checkedAt": null,
+      "plans": []
+    },
+    {
+      "id": "apple-music",
+      "name": "Apple Music",
+      "currency": "TRY",
+      "checkedAt": null,
+      "plans": []
+    },
+    {
+      "id": "icloud",
+      "name": "iCloud+",
+      "currency": "TRY",
+      "checkedAt": null,
+      "plans": []
+    },
+    {
+      "id": "google-one",
+      "name": "Google One",
+      "currency": "TRY",
+      "checkedAt": null,
+      "plans": []
+    },
+    {
+      "id": "exxen",
+      "name": "Exxen",
+      "currency": "TRY",
+      "checkedAt": null,
+      "plans": []
+    },
     {
       "id": "chatgpt-plus",
       "name": "ChatGPT Plus",
       "currency": "USD",
       "checkedAt": "2026-10-23",
-      "plans": [{ "id": "plus", "name": "Plus", "price": 20 }]
+      "plans": [
+        {
+          "id": "plus",
+          "name": "Plus",
+          "price": 20
+        }
+      ]
     },
     {
       "id": "claude-pro",
       "name": "Claude Pro",
       "currency": "USD",
       "checkedAt": "2026-10-23",
-      "plans": [{ "id": "pro", "name": "Pro (aylık)", "price": 20 }]
+      "plans": [
+        {
+          "id": "pro",
+          "name": "Pro (aylık)",
+          "price": 20
+        }
+      ]
     }
   ]
 }
