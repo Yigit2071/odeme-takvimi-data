@@ -1,15 +1,15 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-26",
+  "updatedAt": "2026-11-27",
   "tufe12mAvg": {
     "period": "2026-10",
     "rate": 31.23
   },
   "fx": {
-    "date": "2026-11-26",
+    "date": "2026-11-27",
     "rates": {
-      "USD": 50.6441,
-      "EUR": 55.3967
+      "USD": 50.6777,
+      "EUR": 55.5968
     }
   },
   "services": [
